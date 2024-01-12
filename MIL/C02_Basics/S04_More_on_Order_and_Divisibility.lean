@@ -38,18 +38,49 @@ example : min a b = min b a := by
     apply min_le_right
     apply min_le_left
 
+#check max_le
+
+#check le_max_left
+
 example : max a b = max b a := by
-  sorry
+  apply le_antisymm
+  repeat
+    apply max_le
+    apply le_max_right
+    apply le_max_left
+  done
+
 example : min (min a b) c = min a (min b c) := by
-  sorry
+  apply le_antisymm
+  focus
+    aesop
+  focus
+    aesop
+
 theorem aux : min a b + c ≤ min (a + c) (b + c) := by
-  sorry
+  aesop
+
 example : min a b + c = min (a + c) (b + c) := by
-  sorry
+  apply le_antisymm
+  focus
+    exact aux _ _ _
+  focus
+    by_cases _h : a ≤ b
+    focus
+      simp
+      exact le_total a b
+    focus
+      simp
+      exact le_total a b
+
 #check (abs_add : ∀ a b : ℝ, |a + b| ≤ |a| + |b|)
 
-example : |a| - |b| ≤ |a - b| :=
-  sorry
+example : |a| - |b| ≤ |a - b| := by
+  have : |a| ≤ |a - b| + |b| := by
+    nth_rw 1 [show a = (a - b) + b from by abel]
+    refine abs_add (a - b) ?_
+  rw [@tsub_le_iff_right]
+  assumption
 end
 
 section
@@ -66,7 +97,10 @@ example : x ∣ x ^ 2 := by
    apply dvd_mul_left
 
 example (h : x ∣ w) : x ∣ y * (x * z) + x ^ 2 + w ^ 2 := by
-  sorry
+  have ⟨v, hv⟩ := h
+  use y * z + x + x * v * v
+  rw [hv]
+  ring
 end
 
 section
@@ -78,7 +112,10 @@ variable (m n : ℕ)
 #check (Nat.lcm_zero_left n : Nat.lcm 0 n = 0)
 
 example : Nat.gcd m n = Nat.gcd n m := by
-  sorry
+  apply dvd_antisymm
+  repeat
+    apply dvd_gcd
+    · exact Nat.gcd_dvd_right _ _
+    · exact Nat.gcd_dvd_left _ _
+  done
 end
-
-
