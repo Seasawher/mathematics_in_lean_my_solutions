@@ -55,15 +55,19 @@ example : ¬FnHasUb fun x ↦ x := by
 #check (le_of_not_gt : ¬a > b → a ≤ b)
 
 example (h : Monotone f) (h' : f a < f b) : a < b := by
-  sorry
+  contrapose! h'
+  apply h
+  assumption
 
 example (h : a ≤ b) (h' : f b < f a) : ¬Monotone f := by
-  sorry
+  intro hf
+  have : f a ≤ f b := hf h
+  linarith
 
 example : ¬∀ {f : ℝ → ℝ}, Monotone f → ∀ {a b}, f a ≤ f b → a ≤ b := by
   intro h
   let f := fun x : ℝ ↦ (0 : ℝ)
-  have monof : Monotone f := by sorry
+  have monof : Monotone f := by intro x y h; simp [f]
   have h' : f 1 ≤ f 0 := le_refl _
   sorry
 
