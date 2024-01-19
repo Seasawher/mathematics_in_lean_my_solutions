@@ -126,8 +126,17 @@ theorem aux {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 :=
     nlinarith
   pow_eq_zero h'
 
-example (x y : ℝ) : x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 :=
-  sorry
+example (x y : ℝ) : x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 := by
+  constructor
+  focus
+    intro h
+    constructor
+    · apply aux h
+    · apply aux (by rw [add_comm] at h; exact h)
+  focus
+    intro h
+    rcases h with ⟨rfl, rfl⟩
+    simp
 
 section
 
@@ -148,7 +157,11 @@ theorem not_monotone_iff {f : ℝ → ℝ} : ¬Monotone f ↔ ∃ x y, x ≤ y �
   rfl
 
 example : ¬Monotone fun x : ℝ ↦ -x := by
-  sorry
+  intro h
+  set f := fun x : ℝ ↦ -x
+  have hz := @h 0 1 (by norm_num)
+  simp at hz
+  linarith
 
 section
 variable {α : Type*} [PartialOrder α]
@@ -156,8 +169,18 @@ variable (a b : α)
 
 example : a < b ↔ a ≤ b ∧ a ≠ b := by
   rw [lt_iff_le_not_le]
-  sorry
-
+  constructor
+  focus
+    apply And.imp_right
+    intro h
+    exact Ne.symm (ne_of_not_le h)
+  focus
+    intro h
+    constructor
+    · tauto
+    · intro h'
+      apply h.right
+      exact le_antisymm h.left h'
 end
 
 section
@@ -166,10 +189,15 @@ variable (a b c : α)
 
 example : ¬a < a := by
   rw [lt_iff_le_not_le]
-  sorry
+  tauto
 
 example : a < b → b < c → a < c := by
   simp only [lt_iff_le_not_le]
-  sorry
-
+  intro h0 h1
+  constructor
+  focus
+    calc a ≤ b := h0.left
+      _ ≤ c := h1.left
+  focus
+    sorry
 end
