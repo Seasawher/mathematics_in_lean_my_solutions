@@ -134,8 +134,35 @@ theorem lt_abs : x < |y| ↔ x < y ∨ x < -y := by
         _ ≤ |y| := neg_le_abs_self y
 
 theorem abs_lt : |x| < y ↔ -y < x ∧ x < y := by
-
-  sorry
+  constructor
+  case mp =>
+    intro h
+    cases le_or_gt 0 x
+    case inl hx =>
+      rw [abs_of_nonneg hx] at h
+      constructor
+      · linarith
+      · assumption
+    case inr hx =>
+      rw [abs_of_neg hx] at h
+      constructor
+      · linarith
+      focus
+        calc
+          x < 0 := by linarith
+          _ < -x := by linarith
+          _ < y := by linarith
+  case mpr =>
+    intro h
+    rcases h with ⟨hl, hr⟩
+    rcases le_or_gt 0 x with pos | neg
+    focus
+      rw [abs_of_nonneg pos]
+      assumption
+    focus
+      rw [abs_of_neg neg]
+      linarith
+  done
 
 end MyAbs
 
