@@ -192,12 +192,8 @@ example : ¬a < a := by
   tauto
 
 example : a < b → b < c → a < c := by
-  simp only [lt_iff_le_not_le]
-  intro h0 h1
-  constructor
-  focus
-    calc a ≤ b := h0.left
-      _ ≤ c := h1.left
-  focus
-    sorry
+  intros
+  calc
+    a < b := by assumption
+    _ < c := by assumption
 end
