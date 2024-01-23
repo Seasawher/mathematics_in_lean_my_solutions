@@ -85,12 +85,56 @@ theorem neg_le_abs_self (x : ℝ) : -x ≤ |x| := by
     rw [abs_of_neg h]
 
 theorem abs_add (x y : ℝ) : |x + y| ≤ |x| + |y| := by
-  sorry
+  let sign := le_or_gt 0 (x + y)
+  cases sign
+
+  case inl h =>
+    rw [abs_of_nonneg h]
+    gcongr
+    all_goals
+      exact le_abs_self _
+
+  case inr h =>
+    rw [abs_of_neg h]
+    have hx := neg_le_abs_self x
+    have hy := neg_le_abs_self y
+    linarith
 
 theorem lt_abs : x < |y| ↔ x < y ∨ x < -y := by
-  sorry
+  constructor
+  case mp =>
+    intro h
+    cases le_or_gt 0 y
+    case inl hy =>
+      rw [abs_of_nonneg hy] at h
+      left
+      assumption
+    case inr hy =>
+      rw [abs_of_neg hy] at h
+      right
+      assumption
+    done
+  case mpr =>
+    intro h
+    rcases h with hl | hr
+    case inl =>
+      cases le_or_gt 0 y
+      case inl hy =>
+        rw [abs_of_nonneg hy]
+        assumption
+      case inr hy =>
+        rw [abs_of_neg hy]
+        calc
+          x < y := hl
+          _ < 0 := hy
+          _ < - y := by linarith
+    case inr =>
+      calc
+        x < -y := hr
+        _ ≤ |y| := neg_le_abs_self y
 
 theorem abs_lt : |x| < y ↔ -y < x ∧ x < y := by
+
   sorry
 
 end MyAbs
@@ -112,23 +156,30 @@ example {m n k : ℕ} (h : m ∣ n ∨ m ∣ k) : m ∣ n * k := by
     apply dvd_mul_right
 
 example {z : ℝ} (h : ∃ x y, z = x ^ 2 + y ^ 2 ∨ z = x ^ 2 + y ^ 2 + 1) : z ≥ 0 := by
-  sorry
+  obtain ⟨x, y, h⟩ := h
+  rcases h with h | h
+  all_goals
+    rw [h]
+    linarith [pow_two_nonneg x, pow_two_nonneg y]
 
 example {x : ℝ} (h : x ^ 2 = 1) : x = 1 ∨ x = -1 := by
-  sorry
+  rw [← @mul_self_eq_one_iff]
+  linarith
 
 example {x y : ℝ} (h : x ^ 2 = y ^ 2) : x = y ∨ x = -y := by
-  sorry
+  rwa [← @sq_eq_sq_iff_eq_or_eq_neg]
 
 section
 variable {R : Type*} [CommRing R] [IsDomain R]
 variable (x y : R)
 
 example (h : x ^ 2 = 1) : x = 1 ∨ x = -1 := by
-  sorry
+  rw [← @mul_self_eq_one_iff]
+  rw [← h]
+  ring
 
 example (h : x ^ 2 = y ^ 2) : x = y ∨ x = -y := by
-  sorry
+  rwa [← @sq_eq_sq_iff_eq_or_eq_neg]
 
 end
 
@@ -145,4 +196,4 @@ example (P : Prop) : ¬¬P → P := by
   contradiction
 
 example (P Q : Prop) : P → Q ↔ ¬P ∨ Q := by
-  sorry
+  tauto
