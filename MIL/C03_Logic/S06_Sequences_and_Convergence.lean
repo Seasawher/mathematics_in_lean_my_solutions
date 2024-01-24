@@ -35,7 +35,15 @@ theorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
   rcases cs (ε / 2) ε2pos with ⟨Ns, hs⟩
   rcases ct (ε / 2) ε2pos with ⟨Nt, ht⟩
   use max Ns Nt
-  sorry
+
+  intro n nge
+  replace hs := hs n (le_of_max_le_left nge)
+  replace ht := ht n (le_of_max_le_right nge)
+  calc |s n + t n - (a + b)|
+    _ = |(s n - a) + (t n - b)| := by abel_nf
+    _ ≤ |s n - a| + |t n - b| := by apply abs_add
+    _ < ε / 2 + ε / 2 := by gcongr
+    _ = ε := by simp_arith
 
 theorem convergesTo_mul_const {s : ℕ → ℝ} {a : ℝ} (c : ℝ) (cs : ConvergesTo s a) :
     ConvergesTo (fun n ↦ c * s n) (c * a) := by
@@ -46,7 +54,18 @@ theorem convergesTo_mul_const {s : ℕ → ℝ} {a : ℝ} (c : ℝ) (cs : Conver
     rw [h]
     ring
   have acpos : 0 < |c| := abs_pos.mpr h
-  sorry
+
+  dsimp [ConvergesTo] at *
+  intro ε εpos
+  replace ⟨N, cs⟩ := cs (ε / |c|) (show ε / |c| > 0 from div_pos εpos acpos)
+  use N
+  intro n nge
+  replace cs := cs n nge
+  calc
+    |c * s n - c * a| = |c * (s n - a)| := by ring_nf
+    _ = |c| * |s n - a| := by rw [abs_mul]
+    _ < |c| * (ε / |c|) := by apply mul_lt_mul_of_pos_left cs acpos
+    _ = ε := by field_simp; ring
 
 theorem exists_abs_le_of_convergesTo {s : ℕ → ℝ} {a : ℝ} (cs : ConvergesTo s a) :
     ∃ N b, ∀ n, N ≤ n → |s n| < b := by
@@ -100,4 +119,3 @@ def ConvergesTo' (s : α → ℝ) (a : ℝ) :=
   ∀ ε > 0, ∃ N, ∀ n ≥ N, |s n - a| < ε
 
 end
-
