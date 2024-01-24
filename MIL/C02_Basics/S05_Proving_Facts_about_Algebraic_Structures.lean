@@ -34,46 +34,31 @@ variable (x y z : α)
 #check (sup_le : x ≤ z → y ≤ z → x ⊔ y ≤ z)
 
 -- 後で使うので名前を付けておく
-lemma my_inf_comm : x ⊓ y = y ⊓ x := by
+theorem my_inf_comm : x ⊓ y = y ⊓ x := by
   apply le_antisymm
-  simp
-
-  apply le_inf
-  simp
-
-  exact inf_le_left
+  all_goals
+    simp
 
 @[simp]
 lemma inf_triple_left : x ⊓ y ⊓ z ≤ x := by
-  -- 補題を用意する
   calc x ⊓ y ⊓ z
     _ ≤ x ⊓ y := @inf_le_left _ _ (x ⊓ y) z
     _ ≤ x := by apply inf_le_left
 
 @[simp]
 lemma inf_triple_mid : x ⊓ y ⊓ z ≤ y := by
-  -- 補題を用意する
   calc x ⊓ y ⊓ z
     _ ≤ x ⊓ y := @inf_le_left _ _ (x ⊓ y) z
     _ ≤ y := by apply inf_le_right
 
-@[aesop safe]
 lemma my_inf_assoc : x ⊓ y ⊓ z = x ⊓ (y ⊓ z) := by
   apply le_antisymm
-  simp
-
-  rw [my_inf_comm]
-  simp
+  · simp
+  · rw [my_inf_comm]
+    simp
 
 -- 後で使うので名前を付けておく
-lemma my_sup_comm : x ⊔ y = y ⊔ x := by
-  apply le_antisymm
-  simp
-
-  apply sup_le
-  simp
-
-  exact le_sup_left
+theorem my_sup_comm : x ⊔ y = y ⊔ x := @my_inf_comm αᵒᵈ _ _ _
 
 @[simp]
 lemma sup_triple_left : x ≤ x ⊔ y ⊔ z := by
@@ -89,28 +74,17 @@ lemma sup_triple_mid : y ≤ x ⊔ y ⊔ z := by
     _ ≤ x ⊔ y := le_sup_right
     _ ≤ x ⊔ y ⊔ z := le_sup_left
 
-@[aesop safe]
-lemma my_sup_assoc : x ⊔ y ⊔ z = x ⊔ (y ⊔ z) := by
-  apply le_antisymm
-  simp
-
-  all_goals
-    rw [my_sup_comm]
-    simp
+theorem my_sup_assoc : x ⊔ y ⊔ z = x ⊔ (y ⊔ z) := @my_inf_assoc αᵒᵈ _ _ _ _
 
 theorem absorb1 : x ⊓ (x ⊔ y) = x := by
   apply le_antisymm
-  simp
-
-  apply le_inf
   all_goals
     simp
 
 theorem absorb2 : x ⊔ x ⊓ y = x := by
   apply le_antisymm
-  simp
-
-  exact le_sup_left
+  all_goals
+    simp
 
 end
 
