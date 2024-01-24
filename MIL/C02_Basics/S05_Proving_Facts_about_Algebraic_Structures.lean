@@ -57,22 +57,7 @@ lemma my_inf_assoc : x ⊓ y ⊓ z = x ⊓ (y ⊓ z) := by
   · rw [my_inf_comm]
     simp
 
--- 後で使うので名前を付けておく
 theorem my_sup_comm : x ⊔ y = y ⊔ x := @my_inf_comm αᵒᵈ _ _ _
-
-@[simp]
-lemma sup_triple_left : x ≤ x ⊔ y ⊔ z := by
-  -- 補題を用意する
-  calc x
-    _ ≤ x ⊔ y := le_sup_left
-    _ ≤ x ⊔ y ⊔ z := le_sup_left
-
-@[simp]
-lemma sup_triple_mid : y ≤ x ⊔ y ⊔ z := by
-  -- 補題を用意する
-  calc y
-    _ ≤ x ⊔ y := le_sup_right
-    _ ≤ x ⊔ y ⊔ z := le_sup_left
 
 theorem my_sup_assoc : x ⊔ y ⊔ z = x ⊔ (y ⊔ z) := @my_inf_assoc αᵒᵈ _ _ _ _
 
@@ -101,32 +86,6 @@ end
 section
 variable {α : Type*} [Lattice α]
 variable (a b c : α)
-
-@[gcongr]
-lemma my_sup_le_sup_right (h : a ≤ b) : a ⊔ c ≤ b ⊔ c := by
-  -- 補題を用意する
-  apply sup_le
-
-  focus
-    calc a
-      _ ≤ b := h
-      _ ≤ b ⊔ c := le_sup_left
-
-  focus
-    exact le_sup_right
-
-@[gcongr]
-lemma my_inf_le_inf_right (h : a ≤ b) : a ⊓ c ≤ b ⊓ c := by
-  -- 補題を用意する
-  apply le_inf
-
-  focus
-    calc a ⊓ c
-      _ ≤ a := inf_le_left
-      _ ≤ b := h
-
-  focus
-    exact inf_le_right
 
 example (h : ∀ x y z : α, x ⊓ (y ⊔ z) = x ⊓ y ⊔ x ⊓ z) : a ⊔ b ⊓ c = (a ⊔ b) ⊓ (a ⊔ c) := by
   show a ⊔ (b ⊓ c) = (a ⊔ b) ⊓ (a ⊔ c)
