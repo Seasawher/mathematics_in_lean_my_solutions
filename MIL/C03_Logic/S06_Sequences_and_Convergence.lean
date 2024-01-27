@@ -71,7 +71,13 @@ theorem exists_abs_le_of_convergesTo {s : ℕ → ℝ} {a : ℝ} (cs : Converges
     ∃ N b, ∀ n, N ≤ n → |s n| < b := by
   rcases cs 1 zero_lt_one with ⟨N, h⟩
   use N, |a| + 1
-  sorry
+  intro n hn
+  specialize h n hn
+  calc
+    |s n| = |(s n - a) + a| := by congr; ring
+    _ ≤ |s n - a| + |a| := by apply abs_add
+    _ < 1 + |a| := by linarith
+    _ = |a| + 1 := by abel
 
 theorem aux {s t : ℕ → ℝ} {a : ℝ} (cs : ConvergesTo s a) (ct : ConvergesTo t 0) :
     ConvergesTo (fun n ↦ s n * t n) 0 := by
@@ -81,7 +87,17 @@ theorem aux {s t : ℕ → ℝ} {a : ℝ} (cs : ConvergesTo s a) (ct : Converges
   have Bpos : 0 < B := lt_of_le_of_lt (abs_nonneg _) (h₀ N₀ (le_refl _))
   have pos₀ : ε / B > 0 := div_pos εpos Bpos
   rcases ct _ pos₀ with ⟨N₁, h₁⟩
-  sorry
+  use max N₀ N₁
+  intro n nge
+  replace h₀ := h₀ n (le_of_max_le_left nge)
+  replace h₁ := h₁ n (le_of_max_le_right nge)
+  simp at h₁
+  calc
+    |s n * t n - 0| = |s n * t n| := by ring_nf
+    _ = |s n| * |t n| := by rw [abs_mul]
+    _ ≤ B * |t n| := by gcongr
+    _ < B * (ε / B) := by gcongr
+    _ = ε := by field_simp; ring
 
 theorem convergesTo_mul {s t : ℕ → ℝ} {a b : ℝ}
       (cs : ConvergesTo s a) (ct : ConvergesTo t b) :
@@ -99,7 +115,11 @@ theorem convergesTo_unique {s : ℕ → ℝ} {a b : ℝ}
       (sa : ConvergesTo s a) (sb : ConvergesTo s b) :
     a = b := by
   by_contra abne
-  have : |a - b| > 0 := by sorry
+  have : |a - b| > 0 := by
+    refine abs_pos.mpr ?_
+    intro h
+    apply abne
+    linarith
   let ε := |a - b| / 2
   have εpos : ε > 0 := by
     change |a - b| / 2 > 0
@@ -107,9 +127,14 @@ theorem convergesTo_unique {s : ℕ → ℝ} {a b : ℝ}
   rcases sa ε εpos with ⟨Na, hNa⟩
   rcases sb ε εpos with ⟨Nb, hNb⟩
   let N := max Na Nb
-  have absa : |s N - a| < ε := by sorry
-  have absb : |s N - b| < ε := by sorry
-  have : |a - b| < |a - b| := by sorry
+  have absa : |s N - a| < ε := by apply hNa N (le_of_max_le_left (le_refl _))
+  have absb : |s N - b| < ε := by apply hNb N (le_of_max_le_right (le_refl _))
+  have : |a - b| < |a - b| := by calc
+    |a - b| = |(a - s N) + (s N - b)| := by congr; ring
+    _ ≤ |a - s N| + |s N - b| := by apply abs_add
+    _ = |s N - a| + |s N - b| := by rw [@abs_sub_comm]
+    _ < ε + ε := by gcongr
+    _ = |a - b| := by field_simp
   exact lt_irrefl _ this
 
 section
