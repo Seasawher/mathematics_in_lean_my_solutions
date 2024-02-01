@@ -25,10 +25,10 @@ example (h : s ⊆ t) : s ∩ u ⊆ t ∩ u := by
   exact ⟨h xsu.1, xsu.2⟩
 
 theorem foo (h : s ⊆ t) : s ∩ u ⊆ t ∩ u :=
-  fun x ⟨xs, xu⟩ ↦ ⟨h xs, xu⟩
+  fun _ ⟨xs, xu⟩ ↦ ⟨h xs, xu⟩
 
 example (h : s ⊆ t) : s ∩ u ⊆ t ∩ u :=
-  fun x ⟨xs, xu⟩ ↦ ⟨h xs, xu⟩
+  fun _ ⟨xs, xu⟩ ↦ ⟨h xs, xu⟩
 
 example : s ∩ (t ∪ u) ⊆ s ∩ t ∪ s ∩ u := by
   intro x hx
@@ -48,7 +48,11 @@ example : s ∩ (t ∪ u) ⊆ s ∩ t ∪ s ∩ u := by
   . right; exact ⟨xs, xu⟩
 
 example : s ∩ t ∪ s ∩ u ⊆ s ∩ (t ∪ u) := by
-  sorry
+  intro x hx
+  rcases hx with xst | xsu
+  all_goals
+    aesop
+
 example : (s \ t) \ u ⊆ s \ (t ∪ u) := by
   intro x xstu
   have xs : x ∈ s := xstu.1.1
@@ -68,7 +72,9 @@ example : (s \ t) \ u ⊆ s \ (t ∪ u) := by
   rintro (xt | xu) <;> contradiction
 
 example : s \ (t ∪ u) ⊆ (s \ t) \ u := by
-  sorry
+  intro x hx
+  aesop
+
 example : s ∩ t = t ∩ s := by
   ext x
   simp only [mem_inter_iff]
@@ -77,7 +83,7 @@ example : s ∩ t = t ∩ s := by
   . rintro ⟨xt, xs⟩; exact ⟨xs, xt⟩
 
 example : s ∩ t = t ∩ s :=
-  Set.ext fun x ↦ ⟨fun ⟨xs, xt⟩ ↦ ⟨xt, xs⟩, fun ⟨xt, xs⟩ ↦ ⟨xs, xt⟩⟩
+  Set.ext fun _ ↦ ⟨fun ⟨xs, xt⟩ ↦ ⟨xt, xs⟩, fun ⟨xt, xs⟩ ↦ ⟨xs, xt⟩⟩
 
 example : s ∩ t = t ∩ s := by ext x; simp [and_comm]
 
@@ -86,19 +92,24 @@ example : s ∩ t = t ∩ s := by
   · rintro x ⟨xs, xt⟩; exact ⟨xt, xs⟩
   . rintro x ⟨xt, xs⟩; exact ⟨xs, xt⟩
 
-example : s ∩ t = t ∩ s :=
-    Subset.antisymm sorry sorry
+example : s ∩ t = t ∩ s := by
+    refine Subset.antisymm ?left ?right
+    case left =>
+      aesop
+    case right =>
+      aesop
+
 example : s ∩ (s ∪ t) = s := by
-  sorry
+  aesop
 
 example : s ∪ s ∩ t = s := by
-  sorry
+  aesop
 
 example : s \ t ∪ t = s ∪ t := by
-  sorry
+  aesop
 
 example : s \ t ∪ t \ s = (s ∪ t) \ (s ∩ t) := by
-  sorry
+  aesop
 
 def evens : Set ℕ :=
   { n | Even n }
@@ -119,7 +130,20 @@ example (x : ℕ) : x ∈ (univ : Set ℕ) :=
   trivial
 
 example : { n | Nat.Prime n } ∩ { n | n > 2 } ⊆ { n | ¬Even n } := by
-  sorry
+  intro n hn
+  obtain ⟨np, nnt⟩ := hn
+  simp at *
+  intro neven
+
+  dsimp [Nat.Prime] at np
+  replace np := np.isUnit_or_isUnit'
+
+  obtain ⟨k, hk⟩ := neven
+  rw [show k + k = 2 * k from by ring] at hk
+  replace np := np 2 k hk
+  rcases np with unit2 | unitk
+  all_goals
+    aesop
 
 #print Prime
 
@@ -239,4 +263,3 @@ example : ⋂₀ s = ⋂ t ∈ s, t := by
   rfl
 
 end
-
