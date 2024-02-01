@@ -19,10 +19,10 @@ example {a : ℝ} (h : 1 < a) : a < a * a := by
   · rw [one_mul]
   exact lt_trans zero_lt_one h
 
-theorem convergesTo_const (a : ℝ) : ConvergesTo (fun x : ℕ ↦ a) a := by
+theorem convergesTo_const (a : ℝ) : ConvergesTo (fun _ : ℕ ↦ a) a := by
   intro ε εpos
   use 0
-  intro n nge
+  intro n _
   rw [sub_self, abs_zero]
   apply εpos
 
