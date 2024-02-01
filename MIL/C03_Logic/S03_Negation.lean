@@ -67,7 +67,7 @@ example (h : a ≤ b) (h' : f b < f a) : ¬Monotone f := by
 example : ¬∀ {f : ℝ → ℝ}, Monotone f → ∀ {a b}, f a ≤ f b → a ≤ b := by
   intro h
   let f := fun _ : ℝ ↦ (0 : ℝ)
-  have monof : Monotone f := by intro x y h; simp [f]
+  have monof : Monotone f := by intro x y _; simp [f]
   have h' : f 1 ≤ f 0 := le_refl _
   replace h := @h f monof 1 0 h'
   linarith
