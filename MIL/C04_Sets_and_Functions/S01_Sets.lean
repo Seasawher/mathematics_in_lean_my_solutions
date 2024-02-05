@@ -179,10 +179,10 @@ section
 variable (ssubt : s ⊆ t)
 
 example (h₀ : ∀ x ∈ t, ¬Even x) (h₁ : ∀ x ∈ t, Prime x) : ∀ x ∈ s, ¬Even x ∧ Prime x := by
-  sorry
+  aesop
 
 example (h : ∃ x ∈ s, ¬Even x ∧ Prime x) : ∃ x ∈ t, Prime x := by
-  sorry
+  aesop
 
 end
 
@@ -221,7 +221,18 @@ example : (⋂ i, A i ∩ B i) = (⋂ i, A i) ∩ ⋂ i, B i := by
 
 
 example : (s ∪ ⋂ i, A i) = ⋂ i, A i ∪ s := by
-  sorry
+  ext x
+  constructor
+  focus
+    intro hx
+    aesop
+  focus
+    intro hx
+    simp at *
+    by_cases h : x ∈ s ; aesop ; right
+    intro i
+    specialize hx i
+    simp_all
 
 def primes : Set ℕ :=
   { x | Nat.Prime x }
@@ -242,7 +253,13 @@ example : (⋂ p ∈ primes, { x | ¬p ∣ x }) ⊆ { x | x = 1 } := by
   apply Nat.exists_prime_and_dvd
 
 example : (⋃ p ∈ primes, { x | x ≤ p }) = univ := by
-  sorry
+  apply eq_univ_of_forall
+  simp
+  have := Nat.exists_infinite_primes
+  intro n
+  replace ⟨ p, this ⟩ := this n
+  use p
+  aesop
 
 end
 
