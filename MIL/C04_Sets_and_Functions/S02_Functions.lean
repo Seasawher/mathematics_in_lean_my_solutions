@@ -97,27 +97,52 @@ example : f '' (s ∩ f ⁻¹' u) ⊆ f '' s ∩ u := by
   aesop
 
 example : s ∩ f ⁻¹' u ⊆ f ⁻¹' (f '' s ∩ u) := by
-  sorry
+  intro x hx
+  aesop
 
 example : s ∪ f ⁻¹' u ⊆ f ⁻¹' (f '' s ∪ u) := by
-  sorry
+  intro x hx
+  aesop
 
 variable {I : Type*} (A : I → Set α) (B : I → Set β)
 
 example : (f '' ⋃ i, A i) = ⋃ i, f '' A i := by
-  sorry
+  ext y
+  constructor
+  all_goals
+    intro z
+    aesop
 
 example : (f '' ⋂ i, A i) ⊆ ⋂ i, f '' A i := by
-  sorry
+  intro y
+  aesop
 
 example (i : I) (injf : Injective f) : (⋂ i, f '' A i) ⊆ f '' ⋂ i, A i := by
-  sorry
+  intro y hy
+  simp at hy
+  obtain ⟨x, _, hfx⟩ := hy i
+  use x
+
+  constructor
+
+  case h.right =>
+    assumption
+
+  case h.left =>
+    simp
+    intro j
+    have ⟨xj, hxj, hfj⟩ := hy j
+    rw [← hfj] at hfx
+    have := injf hfx
+    rwa [this]
 
 example : (f ⁻¹' ⋃ i, B i) = ⋃ i, f ⁻¹' B i := by
-  sorry
+  ext x
+  aesop
 
 example : (f ⁻¹' ⋂ i, B i) = ⋂ i, f ⁻¹' B i := by
-  sorry
+  ext x
+  simp
 
 example : InjOn f s ↔ ∀ x₁ ∈ s, ∀ x₂ ∈ s, f x₁ = f x₂ → x₁ = x₂ :=
   Iff.refl _
