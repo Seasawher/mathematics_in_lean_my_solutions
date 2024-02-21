@@ -12,13 +12,16 @@ variable {α β : Type*} [Nonempty β]
 section
 variable (f : α → β) (g : β → α)
 
+/-- `f, g` をもとに定義される `α` の部分集合の族 -/
 def sbAux : ℕ → Set α
   | 0 => univ \ g '' univ
   | n + 1 => g '' (f '' sbAux n)
 
+/-- `sbAux` の和集合 -/
 def sbSet :=
   ⋃ n, sbAux f g n
 
+/-- `f` と `invFun g` の貼り合わせで作った関数 `α → β` -/
 def sbFun (x : α) : β :=
   if x ∈ sbSet f g then f x else invFun g x
 
@@ -28,10 +31,13 @@ theorem sb_right_inv {x : α} (hx : x ∉ sbSet f g) : g (invFun g x) = x := by
     rw [sbSet, mem_iUnion]
     use 0
     rw [sbAux, mem_diff]
-    sorry
-  have : ∃ y, g y = x := by
-    sorry
-  sorry
+    simp
+    intro y
+    simp at hx
+    specialize hx y
+    assumption
+  replace : ∃ y, g y = x := by simpa using this
+  apply invFun_eq this
 
 theorem sb_injective (hf : Injective f) : Injective (sbFun f g) := by
   set A := sbSet f g with A_def
@@ -50,17 +56,28 @@ theorem sb_injective (hf : Injective f) : Injective (sbFun f g) := by
       rw [if_pos x₁A, if_neg x₂nA] at hxeq
       rw [A_def, sbSet, mem_iUnion] at x₁A
       have x₂eq : x₂ = g (f x₁) := by
-        sorry
+        rw [hxeq]; clear hxeq
+        symm
+        apply sb_right_inv f
+        aesop
+
       rcases x₁A with ⟨n, hn⟩
       rw [A_def, sbSet, mem_iUnion]
       use n + 1
       simp [sbAux]
       exact ⟨x₁, hn, x₂eq.symm⟩
-    sorry
-  push_neg  at xA
-  sorry
 
-theorem sb_surjective (hf : Injective f) (hg : Injective g) : Surjective (sbFun f g) := by
+    simp_all
+    apply hf
+    assumption
+  push_neg at xA
+  simp_all
+  calc
+    x₁ = g (invFun g x₁) := by rw [sb_right_inv f g (by aesop)]
+    _ = g (invFun g x₂) := by rw [hxeq]
+    _ = x₂ := by rw [sb_right_inv f g (by aesop)]
+
+theorem sb_surjective (_ : Injective f) (hg : Injective g) : Surjective (sbFun f g) := by
   set A := sbSet f g with A_def
   set h := sbFun f g with h_def
   intro y
@@ -77,8 +94,14 @@ theorem sb_surjective (hf : Injective f) (hg : Injective g) : Surjective (sbFun 
       exact ⟨n, xmem⟩
     simp only [h_def, sbFun, if_pos this]
     exact hg hx
-  sorry
 
+  set x := g y with hx
+  have := sb_right_inv f g gyA
+  nth_rw 2 [hx] at this
+  replace := hg this
+  use x
+  simp only [h_def, sbFun, if_neg gyA]
+  rwa [← hx]
 end
 
 theorem schroeder_bernstein {f : α → β} {g : β → α} (hf : Injective f) (hg : Injective g) :
