@@ -258,10 +258,24 @@ example : Injective f ↔ LeftInverse (inverse f) f := by
     intro comp
     dsimp [LeftInverse] at comp
     intro x x' h
-    sorry
+    calc
+      x = inverse f (f x) := by rw [comp x]
+      _ = inverse f (f x') := by rw [h]
+      _ = x' := by rw [comp x']
 
-example : Surjective f ↔ RightInverse (inverse f) f :=
-  sorry
+example : Surjective f ↔ RightInverse (inverse f) f := by
+  constructor <;> intro h
+
+  case mp =>
+    dsimp [Function.RightInverse]
+    intro y
+    apply inverse_spec
+    apply h y
+
+  case mpr =>
+    intro y
+    dsimp [Function.RightInverse, LeftInverse] at h
+    aesop
 
 end
 
@@ -277,10 +291,13 @@ theorem Cantor : ∀ f : α → Set α, ¬Surjective f := by
     intro h'
     have : j ∉ f j := by rwa [h] at h'
     contradiction
-  have h₂ : j ∈ S
-  sorry
-  have h₃ : j ∉ S
-  sorry
+  have h₂ : j ∈ S := by
+    dsimp [S]
+    assumption
+  have h₃ : j ∉ S := by
+    dsimp [S]
+    rw [h]
+    simpa
   contradiction
 
 -- COMMENTS: TODO: improve this
