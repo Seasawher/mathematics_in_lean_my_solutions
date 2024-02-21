@@ -172,16 +172,49 @@ example : range exp = { y | y > 0 } := by
   rw [exp_log ypos]
 
 example : InjOn sqrt { x | x ≥ 0 } := by
-  sorry
+  dsimp [InjOn]
+  intro x xpos y zpos hxy
+  calc
+    x = sqrt x ^ 2 := by rw [sq_sqrt xpos]
+    _ = sqrt y ^ 2 := by rw [hxy]
+    _ = y := by rw [sq_sqrt zpos]
 
 example : InjOn (fun x ↦ x ^ 2) { x : ℝ | x ≥ 0 } := by
-  sorry
+  dsimp [InjOn]
+  intro x xpos y ypos hxy
+  calc
+    x = sqrt (x ^ 2) := by rw [sqrt_sq xpos]
+    _ = sqrt (y ^ 2) := by rw [hxy]
+    _ = y := by rw [sqrt_sq ypos]
 
 example : sqrt '' { x | x ≥ 0 } = { y | y ≥ 0 } := by
-  sorry
+  ext z
+  constructor
+  case mp =>
+    rintro ⟨x, hx, rfl⟩
+    simp at *
+    exact sqrt_nonneg x
+
+  case mpr =>
+    intro hz
+    simp at *
+    use z ^ 2
+    constructor
+    · positivity
+    · rw [sqrt_sq hz]
 
 example : (range fun x ↦ x ^ 2) = { y : ℝ | y ≥ 0 } := by
-  sorry
+  ext z
+  constructor
+  case mp =>
+    rintro ⟨x, rfl⟩
+    simp
+    exact sq_nonneg x
+  case mpr =>
+    intro hz
+    use sqrt z
+    simp at *
+    rw [sq_sqrt hz]
 
 end
 
@@ -212,8 +245,20 @@ variable (f : α → β)
 
 open Function
 
-example : Injective f ↔ LeftInverse (inverse f) f :=
-  sorry
+example : Injective f ↔ LeftInverse (inverse f) f := by
+  constructor
+  case mp =>
+    intro finj
+    dsimp [LeftInverse]
+    intro x
+    apply finj
+    rw [inverse_spec (f x) (Exists.intro x rfl)]
+
+  case mpr =>
+    intro comp
+    dsimp [LeftInverse] at comp
+    intro x x' h
+    sorry
 
 example : Surjective f ↔ RightInverse (inverse f) f :=
   sorry

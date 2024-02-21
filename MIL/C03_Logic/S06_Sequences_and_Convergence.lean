@@ -40,7 +40,7 @@ theorem convergesTo_add {s t : ℕ → ℝ} {a b : ℝ}
   replace hs := hs n (le_of_max_le_left nge)
   replace ht := ht n (le_of_max_le_right nge)
   calc |s n + t n - (a + b)|
-    _ = |(s n - a) + (t n - b)| := by abel_nf
+    _ = |(s n - a) + (t n - b)| := by congr 1; ring
     _ ≤ |s n - a| + |t n - b| := by apply abs_add
     _ < ε / 2 + ε / 2 := by gcongr
     _ = ε := by simp_arith
