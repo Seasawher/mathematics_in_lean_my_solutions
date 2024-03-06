@@ -146,8 +146,6 @@ example {m n p : ℕ} (nnz : n ≠ 0) (prime_p : p.Prime) : m ^ 2 ≠ p * n ^ 2 
   rw [add_comm, Nat.add_mul_mod_self_left, Nat.mul_mod_right] at this
   norm_num at this
 
-private abbrev Nat.fact := Nat.factorization
-
 example {m n k r : ℕ} (nnz : n ≠ 0) (pow_eq : m ^ k = r * n ^ k) {p : ℕ} (prime_p : p.Prime) :
     k ∣ r.factorization p := by
   rcases r with _ | r
@@ -155,12 +153,18 @@ example {m n k r : ℕ} (nnz : n ≠ 0) (pow_eq : m ^ k = r * n ^ k) {p : ℕ} (
   have npow_nz : n ^ k ≠ 0 := fun npowz ↦ nnz (pow_eq_zero npowz)
   have eq1 : (m ^ k).factorization p = k * m.factorization p := by
     simp
-  have eq2 : (r.succ * n ^ k).fact p =
-      k * n.fact p + r.succ.fact p := by
-    sorry
+  have eq2 : (r.succ * n ^ k).factorization p =
+      k * n.factorization p + r.succ.factorization p := by
+    rw [factorization_mul' (by simp) (by aesop)]
+    simp [Nat.factorization, Nat.add_comm]
   have : r.succ.factorization p = k * m.factorization p - k * n.factorization p := by
     rw [← eq1, pow_eq, eq2, add_comm, Nat.add_sub_cancel]
   rw [this]
-  sorry
+
+  rw [show k * (Nat.factorization m) p - k * (Nat.factorization n) p = k * (m.factorization p - n.factorization p) from ?lem]
+  use (Nat.factorization m) p - (Nat.factorization n) p
+
+  clear * - p prime_p
+  rw [Nat.mul_sub_left_distrib]
 
 #check multiplicity
