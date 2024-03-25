@@ -47,9 +47,16 @@ theorem dvd_fac {i n : ℕ} (ipos : 0 < i) (ile : i ≤ n) : i ∣ fac n := by
   apply dvd_mul_right
 
 theorem pow_two_le_fac (n : ℕ) : 2 ^ (n - 1) ≤ fac n := by
-  rcases n with _ | n
+  induction' n with n ih
   · simp [fac]
-  sorry
+  focus
+    by_cases h : n ≤ 0 <;> simp_all [fac]
+    calc
+      2 ^ n = 2 ^ ((n - 1) + 1) := by congr 1; omega
+      _ = 2 ^ (n - 1) * 2 := by ring
+      _ ≤ fac n * 2 := by gcongr
+      _ = 2 * fac n := by ring
+      _ ≤ (n + 1) * fac n := by gcongr; omega
 section
 
 variable {α : Type*} (s : Finset ℕ) (f : ℕ → ℕ) (n : ℕ)
@@ -100,7 +107,24 @@ theorem sum_id (n : ℕ) : ∑ i in range (n + 1), i = n * (n + 1) / 2 := by
   ring
 
 theorem sum_sqr (n : ℕ) : ∑ i in range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1) / 6 := by
-  sorry
+  symm
+  apply Nat.div_eq_of_eq_mul_right (by simp_arith)
+  induction' n with k ih
+
+  case zero =>
+    simp
+
+  case succ =>
+    rw [Finset.sum_range_succ]
+    rw [show 6 * (∑ x in range (k + 1), x ^ 2 + (k + 1) ^ 2) = 6 * ∑ x in range (k + 1), x ^ 2 + 6 * (k + 1) ^ 2 by ring]
+    rw [← ih]
+    rw [show Nat.succ k = k + 1 from by rfl]
+    ring
+
+example (n : ℚ) : (4 + 4 * n) / 4 = 4 / 4 + n:= by
+  have : 4 ≠ 0 := by norm_num
+  field_simp
+  ring
 end
 
 inductive MyNat
@@ -117,6 +141,7 @@ def mul : MyNat → MyNat → MyNat
   | x, zero => zero
   | x, succ y => add (mul x y) x
 
+@[simp]
 theorem zero_add (n : MyNat) : add zero n = n := by
   induction' n with n ih
   · rfl
@@ -135,13 +160,61 @@ theorem add_comm (m n : MyNat) : add m n = add n m := by
   rw [add, succ_add, ih]
 
 theorem add_assoc (m n k : MyNat) : add (add m n) k = add m (add n k) := by
-  sorry
+  induction' n with k ih
+
+  case zero =>
+    rw [zero_add]
+    simp [add]
+
+  case succ m =>
+    rename_i c
+    rw [add, succ_add]
+    rw [ih]
+    rw [succ_add, add]
+
 theorem mul_add (m n k : MyNat) : mul m (add n k) = add (mul m n) (mul m k) := by
-  sorry
+  induction' k with k ih
+  case zero =>
+    simp [add, mul]
+
+  case succ =>
+    rw [add, mul]
+    rw [ih]
+    rw [show mul m (succ k) = add (mul m k) m from by rfl]
+    rw [add_assoc]
+
+infix:65 " + " => add
+
+infix:70 " * " => mul
+
 theorem zero_mul (n : MyNat) : mul zero n = zero := by
-  sorry
+  induction' n with n ih
+
+  case zero =>
+    rfl
+
+  case succ =>
+    rw [mul, ih]
+    rfl
+
 theorem succ_mul (m n : MyNat) : mul (succ m) n = add (mul m n) n := by
-  sorry
+  induction' n with n ih
+  case zero =>
+    rfl
+
+  case succ =>
+    rw [mul]
+    rw [ih]; clear ih
+    rw [mul, add, add]
+    rw [show (m * n + n) + m  = m * n + (n + m) from by rw [add_assoc]]
+    rw [show (m * n + m) + n = m * n + (m + n) from by rw [add_assoc]]
+    rw [add_comm n m]
+
 theorem mul_comm (m n : MyNat) : mul m n = mul n m := by
-  sorry
+  induction' n with k ih
+  . rw [zero_mul, mul]
+  · rw [mul]
+    rw [succ_mul]
+    rw [ih]
+
 end MyNat
