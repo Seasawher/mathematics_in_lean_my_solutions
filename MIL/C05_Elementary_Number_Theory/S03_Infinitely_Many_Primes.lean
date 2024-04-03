@@ -46,18 +46,22 @@ theorem exists_prime_factor {n : Nat} (h : 2 ≤ n) : ∃ p : Nat, p.Prime ∧ p
 theorem primes_infinite : ∀ n, ∃ p > n, Nat.Prime p := by
   intro n
   have : 2 ≤ Nat.factorial (n + 1) + 1 := by
-    sorry
+    suffices 1 ≤ Nat.factorial (n + 1) from Nat.le_add_of_sub_le this
+    have := Nat.monotone_factorial (show 0 ≤ n + 1 from by simp_arith)
+    nth_rw 1 [show 1 = Nat.factorial 0 from rfl]
+    assumption
   rcases exists_prime_factor this with ⟨p, pp, pdvd⟩
   refine' ⟨p, _, pp⟩
   show p > n
   by_contra ple
   push_neg  at ple
   have : p ∣ Nat.factorial (n + 1) := by
-    sorry
+    apply Nat.dvd_factorial pp.pos (by linarith)
   have : p ∣ 1 := by
-    sorry
+    convert Nat.dvd_sub' pdvd this
+    simp
   show False
-  sorry
+  aesop
 open Finset
 
 section
@@ -90,9 +94,10 @@ section
 variable {α : Type*} [DecidableEq α] (r s t : Finset α)
 
 example : (r ∪ s) ∩ (r ∪ t) = r ∪ s ∩ t := by
-  sorry
+  aesop
+
 example : (r \ s) \ t = r \ (s ∪ t) := by
-  sorry
+  aesop
 
 end
 
@@ -102,7 +107,11 @@ example (s : Finset ℕ) (n : ℕ) (h : n ∈ s) : n ∣ ∏ i in s, i :=
 theorem _root_.Nat.Prime.eq_of_dvd_of_prime {p q : ℕ}
       (prime_p : Nat.Prime p) (prime_q : Nat.Prime q) (h : p ∣ q) :
     p = q := by
-  sorry
+  obtain ⟨k, hk⟩ := h
+  have := prime_q.isUnit_or_isUnit' p k (by assumption)
+  simp at this
+  have pn : p ≠ 1 := by apply prime_p.ne_one
+  simp_all
 
 theorem mem_of_dvd_prod_primes {s : Finset ℕ} {p : ℕ} (prime_p : p.Prime) :
     (∀ n ∈ s, Nat.Prime n) → (p ∣ ∏ n in s, n) → p ∈ s := by
@@ -226,4 +235,3 @@ theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3
   have : p = 3 := by
     sorry
   contradiction
-
