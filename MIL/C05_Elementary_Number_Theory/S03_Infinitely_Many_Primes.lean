@@ -227,6 +227,8 @@ example (n : ℕ) : (4 * n + 3) % 4 = 3 := by
   rw [add_comm, Nat.add_mul_mod_self_left]
   norm_num
 
+/-- `m * n` を4で割った余りが3なら，`m` か `n` のどちらかは
+4で割った余りが3になる -/
 theorem mod_4_eq_3_or_mod_4_eq_3 {m n : ℕ} (h : m * n % 4 = 3) : m % 4 = 3 ∨ n % 4 = 3 := by
   revert h
   rw [Nat.mul_mod]
@@ -235,34 +237,133 @@ theorem mod_4_eq_3_or_mod_4_eq_3 {m n : ℕ} (h : m * n % 4 = 3) : m % 4 = 3 ∨
   have : n % 4 < 4 := Nat.mod_lt n (by norm_num)
   interval_cases hn : n % 4 <;> simp [hn] ; decide
 
+/-- `n` を4で割った余りが3なら，`n` は2以上 -/
 theorem two_le_of_mod_4_eq_3 {n : ℕ} (h : n % 4 = 3) : 2 ≤ n := by
   apply two_le <;>
     · intro neq
       rw [neq] at h
       norm_num at h
 
+/-- `m` が `n` の自明でない約数ならば `k := n / m` も `n` の自明でない約数になる -/
 theorem aux {m n : ℕ} (h₀ : m ∣ n) (h₁ : 2 ≤ m) (h₂ : m < n) : n / m ∣ n ∧ n / m < n := by
-  sorry
+  -- `k := n / m` とおく
+  set k := n / m with hk
+
+  -- このとき `m * k = n` が成り立つ
+  replace hk : m * k = n := by
+    rw [hk]
+    exact Nat.mul_div_cancel' h₀
+
+  constructor
+
+  -- まず `k ∣ n` だが，これは明らか．
+  case left =>
+    use m
+    linarith
+
+  -- 次に `k < n` を示す．
+  case right =>
+    -- 背理法で示す
+    by_contra! h
+
+    -- 仮定から `n ≥ 2 * n` が成り立つ
+    have := calc
+      n = m * k := by rw [hk]
+      _ ≥ 2 * k := by gcongr
+      _ ≥ 2 * n := by gcongr
+
+    -- よって `n = 0` であり `m < 0`.
+    replace : n = 0 := by linarith
+    rw [this] at h₂
+
+    -- これは矛盾である
+    linarith
+
+/-- 4で割って3余る自然数 `n` には，4で割って3余るような素因数 `p` が存在する -/
 theorem exists_prime_factor_mod_4_eq_3 {n : Nat} (h : n % 4 = 3) :
     ∃ p : Nat, p.Prime ∧ p ∣ n ∧ p % 4 = 3 := by
+  -- `n` が素数かどうかで場合分けする
   by_cases np : n.Prime
-  · use n
+
+  -- `n` が素数ならば示すべきことはない
+  -- 以下，`n` は素数でないとしてよい．
+  focus use n
+
+  -- `n` に関する完全帰納法で証明する
   induction' n using Nat.strong_induction_on with n ih
+
+  -- `n` は素数ではないので，自明でない約数 `m` が存在する
   rw [Nat.prime_def_lt] at np
-  push_neg  at np
-  rcases np (two_le_of_mod_4_eq_3 h) with ⟨m, mltn, mdvdn, mne1⟩
+  push_neg at np
+  have nge2 : 2 ≤ n := two_le_of_mod_4_eq_3 h
+  obtain ⟨m, mltn, mdvdn, mne1⟩ := np nge2
+
+  -- 特に `m` は2以上.
   have mge2 : 2 ≤ m := by
     apply two_le _ mne1
     intro mz
     rw [mz, zero_dvd_iff] at mdvdn
     linarith
-  have neq : m * (n / m) = n := Nat.mul_div_cancel' mdvdn
-  have : m % 4 = 3 ∨ n / m % 4 = 3 := by
+
+  -- `k := n / m` とおくと `n = m * k` であり，
+  -- `m` か `k` のどちらかは4で割って3余る
+  set k := n / m
+  have neq : m * k = n := Nat.mul_div_cancel' mdvdn
+  have : m % 4 = 3 ∨ k % 4 = 3 := by
     apply mod_4_eq_3_or_mod_4_eq_3
     rw [neq, h]
+
   rcases this with h1 | h1
-  . sorry
-  . sorry
+
+  focus
+    -- `m` が4で割って3余る場合
+    guard_hyp h1 : m % 4 = 3
+
+    -- `m` が素数でないと仮定してよい
+    by_cases mp : m.Prime
+    case pos => exact ⟨m, mp, mdvdn, h1⟩; done
+    focus
+
+    -- 帰納法の仮定より，`m` には4で割って3余る素因数 `p` が存在する
+    specialize ih m mltn h1 mp
+    obtain ⟨p, ph, pdiv, pmod⟩ := ih
+
+    -- この `p` が所望の素因数である
+    use p
+    suffices p ∣ n from by aesop
+    clear * - pdiv mdvdn
+    calc
+      p ∣ m := pdiv
+      _ ∣ n := by exact mdvdn
+
+  focus
+    -- `k` が4で割って3余る場合
+    guard_hyp h1 : k % 4 = 3
+
+    -- `k` は素数でないと仮定してよい
+    by_cases kp : k.Prime
+    case pos =>
+      use k
+      suffices k ∣ n from by aesop
+      use m; clear * - neq
+      linarith
+    focus
+
+    -- 帰納法の仮定より，`k` には4で割って3余る素因数 `p` が存在する
+    specialize ih k (aux mdvdn mge2 mltn).right h1 kp
+    obtain ⟨p, ph, pdiv, pmod⟩ := ih
+
+    -- この `p` が所望の素因数である
+    use p
+    suffices p ∣ n from by aesop
+    clear * - pdiv neq
+    calc
+      p ∣ k := pdiv
+      _ ∣ n := by use m; linarith
+
+  -- 証明終わり
+  done
+
 example (m n : ℕ) (s : Finset ℕ) (h : m ∈ erase s n) : m ≠ n ∧ m ∈ s := by
   rwa [mem_erase] at h
 
@@ -272,7 +373,7 @@ example (m n : ℕ) (s : Finset ℕ) (h : m ∈ erase s n) : m ≠ n ∧ m ∈ s
 
 theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3 := by
   by_contra h
-  push_neg  at h
+  push_neg at h
   rcases h with ⟨n, hn⟩
   have : ∃ s : Finset Nat, ∀ p : ℕ, p.Prime ∧ p % 4 = 3 ↔ p ∈ s := by
     apply ex_finset_of_bounded
