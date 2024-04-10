@@ -371,10 +371,15 @@ example (m n : ℕ) (s : Finset ℕ) (h : m ∈ erase s n) : m ≠ n ∧ m ∈ s
   simp at h
   assumption
 
+/-- 4で割って3余る素数 `p` は，無限に存在する -/
 theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3 := by
-  by_contra h
-  push_neg at h
+  -- 背理法で示す．
+  by_contra! h
+
+  -- つまりある自然数 `n` が存在して，`n` より大きい4で割って3余る素数は存在しない
   rcases h with ⟨n, hn⟩
+
+  -- このとき4で割って3余る素数をすべて集めた有限集合 `s` が存在する
   have : ∃ s : Finset Nat, ∀ p : ℕ, p.Prime ∧ p % 4 = 3 ↔ p ∈ s := by
     apply ex_finset_of_bounded
     use n
@@ -382,17 +387,74 @@ theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3
     rcases hn with ⟨p, ⟨pp, p4⟩, pltn⟩
     exact ⟨p, pltn, pp, p4⟩
   rcases this with ⟨s, hs⟩
+
+  -- `s` の元を3以外すべて掛けて3を足すと，4で割って3余る自然数が得られる
   have h₁ : ((4 * ∏ i in erase s 3, i) + 3) % 4 = 3 := by
-    sorry
+    suffices 3 % 4 = 3 from by
+      set k := ∏ i in erase s 3, i
+      simp [Nat.add_mod]
+    simp
+
+  -- 4で割って3余る自然数には4で割って3余る素因数が存在するので，
+  -- `(4 * ∏ i in erase s 3, i) + 3` にも4で割って3余る素因数 `p` が存在する
   rcases exists_prime_factor_mod_4_eq_3 h₁ with ⟨p, pp, pdvd, p4eq⟩
+
+  -- `p` は背理法の仮定より, `s` の要素である
   have ps : p ∈ s := by
-    sorry
+    clear * - hs pp p4eq
+    specialize hs p
+    aesop
+
+  -- また `p` は 3 ではない
   have pne3 : p ≠ 3 := by
-    sorry
+    -- 背理法で示す
+    by_contra h
+    rw [h] at pdvd
+    norm_num at pdvd
+
+    -- 3 は素数なので，`3 ∣ ∏ i in erase s 3, i` が成り立つ
+    replace pdvd : 3 ∣ 4 ∨ 3 ∣ ∏ i in erase s 3, i := by
+      refine (Nat.Prime.dvd_mul ?hp).mp pdvd
+      norm_num
+    replace pdvd : 3 ∣ ∏ i in erase s 3, i := by
+      clear * - pdvd
+      rcases pdvd with h | h
+      . contradiction
+      . assumption
+
+    -- 3 は素数なので `s - {3}` のどれかに一致する
+    have : p ∈ erase s 3 := by
+      apply mem_of_dvd_prod_primes
+      · assumption
+      · intro n hn
+        rw [mem_erase] at hn
+        obtain ⟨_hne3, h⟩ := hn
+        specialize hs n
+        rw [← hs] at h
+        tauto
+      · rwa [h]
+
+    -- これは矛盾である
+    simp [h] at this
+
+  -- `p` は `4 * ∏ i in erase s 3, i` の約数
   have : p ∣ 4 * ∏ i in erase s 3, i := by
-    sorry
+    suffices p ∈ erase s 3 from by
+      have : p ∣ ∏ i in erase s 3, i := by
+        exact dvd_prod_of_mem (fun i ↦ i) this
+      exact Dvd.dvd.mul_left this 4
+    rw [mem_erase]
+    exact ⟨pne3, ps⟩
+
+  -- よって `p` は3を割り切る
   have : p ∣ 3 := by
-    sorry
+    clear * - pdvd this
+    exact (Nat.dvd_add_right this).mp pdvd
+
+  -- `p` は素数なので `p = 3`
   have : p = 3 := by
-    sorry
+    clear * - pp this
+    apply pp.eq_of_dvd_of_prime (by norm_num) (by assumption)
+
+  -- これは矛盾である
   contradiction
