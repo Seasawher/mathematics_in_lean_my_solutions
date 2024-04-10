@@ -6,6 +6,7 @@ open BigOperators
 
 namespace C05S03
 
+/-- 0でも1でもない自然数は2以上 -/
 theorem two_le {m : ℕ} (h0 : m ≠ 0) (h1 : m ≠ 1) : 2 ≤ m := by
   cases m; contradiction
   case succ m =>
@@ -25,6 +26,7 @@ example {m : ℕ} (h0 : m ≠ 0) (h1 : m ≠ 1) : 2 ≤ m := by
   revert h m
   decide
 
+/-- 2以上の自然数には，素因数が存在する -/
 theorem exists_prime_factor {n : Nat} (h : 2 ≤ n) : ∃ p : Nat, p.Prime ∧ p ∣ n := by
   by_cases np : n.Prime
   · use n, np
@@ -43,6 +45,8 @@ theorem exists_prime_factor {n : Nat} (h : 2 ≤ n) : ∃ p : Nat, p.Prime ∧ p
     use p, pp
     apply pdvd.trans mdvdn
 
+/-- 素数は無限に存在する．
+つまり，任意の自然数 `n` に対して `n` よりも大きい素数が存在する. -/
 theorem primes_infinite : ∀ n, ∃ p > n, Nat.Prime p := by
   intro n
   have : 2 ≤ Nat.factorial (n + 1) + 1 := by
@@ -65,6 +69,8 @@ theorem primes_infinite : ∀ n, ∃ p > n, Nat.Prime p := by
 open Finset
 
 section
+-- `α` は集合で，
+-- `r`, `s`, `t` は `α` の有限部分集合だとする
 variable {α : Type*} [DecidableEq α] (r s t : Finset α)
 
 example : r ∩ (s ∪ t) ⊆ r ∩ s ∪ r ∩ t := by
@@ -104,6 +110,7 @@ end
 example (s : Finset ℕ) (n : ℕ) (h : n ∈ s) : n ∣ ∏ i in s, i :=
   Finset.dvd_prod_of_mem _ h
 
+/-- `p, q` がともに素数で整除関係があるならば，`p = q`.-/
 theorem _root_.Nat.Prime.eq_of_dvd_of_prime {p q : ℕ}
       (prime_p : Nat.Prime p) (prime_q : Nat.Prime q) (h : p ∣ q) :
     p = q := by
@@ -113,6 +120,8 @@ theorem _root_.Nat.Prime.eq_of_dvd_of_prime {p q : ℕ}
   have pn : p ≠ 1 := by apply prime_p.ne_one
   simp_all
 
+/-- 素数だけからなる有限集合 `s` があって，`p` が `∏ n in s` を割り切るならば，
+`p` は `s` の要素 -/
 theorem mem_of_dvd_prod_primes {s : Finset ℕ} {p : ℕ} (prime_p : p.Prime) :
     (∀ n ∈ s, Nat.Prime n) → (p ∣ ∏ n in s, n) → p ∈ s := by
   intro h₀ h₁
@@ -121,29 +130,78 @@ theorem mem_of_dvd_prod_primes {s : Finset ℕ} {p : ℕ} (prime_p : p.Prime) :
     linarith [prime_p.two_le]
   simp [Finset.prod_insert ans, prime_p.dvd_mul] at h₀ h₁
   rw [mem_insert]
-  sorry
+
+  have primea := h₀.left
+  rcases h₁ with h | h
+
+  case inl =>
+    obtain ⟨k, hk⟩ := h
+    left
+    have irr := primea.isUnit_or_isUnit' p k (by assumption)
+    replace irr : k = 1 := by
+      clear * - irr prime_p
+      aesop
+    simp [irr] at hk
+    simp_all
+
+  case inr =>
+    have allprime := h₀.right
+    specialize ih allprime h
+    right
+    assumption
+
 example (s : Finset ℕ) (x : ℕ) : x ∈ s.filter Nat.Prime ↔ x ∈ s ∧ x.Prime :=
   mem_filter
 
+/-- 任意の有限集合 `s` に対して，`s` に含まれない素数 `p` が存在する. -/
 theorem primes_infinite' : ∀ s : Finset Nat, ∃ p, Nat.Prime p ∧ p ∉ s := by
+  -- 有限集合 `s` が与えられたとする
   intro s
-  by_contra h
-  push_neg  at h
+
+  -- 背理法で示す．そのような素数 `p` が存在しないと仮定する
+  by_contra! h
+
+  -- `s` の要素のうち素数であるものだけを集めて，`s'` とする.
   set s' := s.filter Nat.Prime with s'_def
+
+  -- `s` はすべての素数を含むと仮定したので，
+  -- `n ∈ s'` と `n` が素数であることは同値．
   have mem_s' : ∀ {n : ℕ}, n ∈ s' ↔ n.Prime := by
     intro n
     simp [s'_def]
     apply h
+
+  -- ここで `s'` の要素の積に1を足したものは2以上であり，
   have : 2 ≤ (∏ i in s', i) + 1 := by
-    sorry
+    suffices 1 ≤ ∏ i in s', i from by linarith
+    suffices ∀ n ∈ s', 1 ≤ n from by exact one_le_prod' this
+    intro n hn
+    have := mem_s'.mp hn
+    replace := Nat.Prime.two_le this
+    linarith
+
+  -- したがって，`(∏ i in s', i) + 1` の素因数 `p` が存在する
   rcases exists_prime_factor this with ⟨p, pp, pdvd⟩
+
+  -- 一方で，`p` は素数なので，`p ∈ s'` である
+  have pmem : p ∈ s' := by
+    rwa [mem_s']
+
+  -- ゆえに `p` は `s'` の要素の総積を割り切る
   have : p ∣ ∏ i in s', i := by
-    sorry
+    exact dvd_prod_of_mem (fun i ↦ i) pmem
+
+  -- このことから，`p` は `1` を割り切らなければならない
   have : p ∣ 1 := by
     convert Nat.dvd_sub' pdvd this
     simp
+
+  -- これは矛盾である
   show False
-  sorry
+  aesop
+
+/-- `Q` を `ℕ` 上の述語であるとする．このとき `{k // Q k} ⊆ s` なる
+有限集合 `s` が存在するならば，`{k // Q k}` は有界である．-/
 theorem bounded_of_ex_finset (Q : ℕ → Prop) :
     (∃ s : Finset ℕ, ∀ k, Q k → k ∈ s) → ∃ n, ∀ k, Q k → k < n := by
   rintro ⟨s, hs⟩
@@ -153,6 +211,8 @@ theorem bounded_of_ex_finset (Q : ℕ → Prop) :
   show id k ≤ s.sup id
   apply le_sup (hs k Qk)
 
+/-- `Q` を `ℕ` 上の述語であるとする．このとき `{k // Q k}` が有界ならば，
+`{k // Q k} = s` なる有限集合 `s` が存在する. -/
 theorem ex_finset_of_bounded (Q : ℕ → Prop) [DecidablePred Q] :
     (∃ n, ∀ k, Q k → k ≤ n) → ∃ s : Finset ℕ, ∀ k, Q k ↔ k ∈ s := by
   rintro ⟨n, hn⟩

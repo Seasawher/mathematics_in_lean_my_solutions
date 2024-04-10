@@ -157,6 +157,7 @@ example {m n k r : ℕ} (nnz : n ≠ 0) (pow_eq : m ^ k = r * n ^ k) {p : ℕ} (
       k * n.factorization p + r.succ.factorization p := by
     rw [factorization_mul' (by simp) (by aesop)]
     simp [Nat.factorization, Nat.add_comm]
+    sorry
   have : r.succ.factorization p = k * m.factorization p - k * n.factorization p := by
     rw [← eq1, pow_eq, eq2, add_comm, Nat.add_sub_cancel]
   rw [this]
