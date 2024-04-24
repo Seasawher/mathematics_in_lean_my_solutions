@@ -37,6 +37,7 @@ structure Point' where build ::
 
 namespace Point
 
+@[simp]
 def add (a b : Point) : Point :=
   ⟨a.x + b.x, a.y + b.y, a.z + b.z⟩
 
@@ -55,14 +56,29 @@ end Point
 
 namespace Point
 
-protected theorem add_comm (a b : Point) : add a b = add b a := by
-  rw [add, add]
+@[simp]
+instance : Add Point where
+  add := add
+
+-- add は可換
+@[aesop unsafe 50%]
+protected theorem add_comm (a b : Point) : a + b = b + a := by
+  simp [add]
   ext <;> dsimp
   repeat' apply add_comm
 
 example (a b : Point) : add a b = add b a := by simp [add, add_comm]
 
-theorem add_x (a b : Point) : (a.add b).x = a.x + b.x :=
+@[aesop unsafe 80%]
+theorem add_x (a b : Point) : (a + b).x = a.x + b.x :=
+  rfl
+
+@[aesop unsafe 80%]
+theorem add_y (a b : Point) : (a + b).y = a.y + b.y :=
+  rfl
+
+@[aesop unsafe 80%]
+theorem add_z (a b : Point) : (a + b).z = a.z + b.z :=
   rfl
 
 def addAlt : Point → Point → Point
@@ -80,19 +96,39 @@ theorem addAlt_comm (a b : Point) : addAlt a b = addAlt b a := by
   ext <;> dsimp
   repeat' apply add_comm
 
-attribute [simp] add
+@[aesop unsafe 50%]
+protected theorem add_assoc (a b c : Point) : (a + b) + c = a + (b + c) := by
+  ext
+  · rw [add_x, add_x, add_x, add_x]
+    abel
+  . rw [add_y, add_y, add_y, add_y]
+    abel
+  . rw [add_z, add_z, add_z, add_z]
+    abel
 
-protected theorem add_assoc (a b c : Point) : (a.add b).add c = a.add (b.add c) := by
-  simp
-  refine ⟨?fst, ?snd, ?thd⟩ <;> abel
+/-- Point のスカラー倍 -/
+@[simp]
+def smul (r : ℝ) (a : Point) : Point where
+  x := r * a.x
+  y := r * a.y
+  z := r * a.z
 
-def smul (r : ℝ) (a : Point) : Point :=
-  {x := r * a.x, y := r * a.y, z := r * a.z}
+@[simp]
+instance : HSMul ℝ Point Point where
+  hSMul r a := smul r a
 
+/-- Point のスカラー倍が分配法則を満たしている -/
+@[aesop unsafe 50%]
 theorem smul_distrib (r : ℝ) (a b : Point) :
-    (smul r a).add (smul r b) = smul r (a.add b) := by
-  simp
-  ext <;> simp [smul, mul_add]
+    (r • a) + (r • b) = r • (a + b) := by
+  simp_all
+  ext
+  · rw [add_x, add_x]
+    simp [mul_add]
+  · rw [add_y, add_y]
+    simp [mul_add]
+  · rw [add_z, add_z]
+    simp [mul_add]
 
 end Point
 
@@ -139,9 +175,14 @@ def weightedAverage (lambda : Real) (lambda_nonneg : 0 ≤ lambda) (lambda_le : 
   z_nonneg := add_nonneg (mul_nonneg lambda_nonneg a.z_nonneg)
     (mul_nonneg (sub_nonneg_of_le lambda_le) b.z_nonneg)
   sum_eq := by
-    trans (a.x + a.y + a.z) * lambda + (b.x + b.y + b.z) * (1 - lambda)
-    · ring
-    simp [a.sum_eq, b.sum_eq]
+    simp [mul_add, add_mul, mul_sub, sub_mul, a.sum_eq, b.sum_eq]
+    have b_sum_eq : b.x + b.y + b.z = 1 := b.sum_eq
+    have a_sum_eq : a.x + a.y + a.z = 1 := a.sum_eq
+    generalize lambda = p
+    calc
+      _ = p * (a.x + a.y + a.z) + (1 - p) * (b.x + b.y + b.z) := by ring
+      _ = p * 1 + (1 - p) * 1 := by rw [a_sum_eq, b_sum_eq]
+      _ = 1 := by simp_arith
 
 end
 
@@ -156,8 +197,7 @@ structure StandardSimplex (n : ℕ) where
 
 namespace StandardSimplex
 
-def midpoint (n : ℕ) (a b : StandardSimplex n) : StandardSimplex n
-    where
+def midpoint (n : ℕ) (a b : StandardSimplex n) : StandardSimplex n where
   V i := (a.V i + b.V i) / 2
   NonNeg := by
     intro i
