@@ -3,6 +3,7 @@ import Mathlib.Data.Real.Basic
 
 namespace C06S02
 
+/-- 構造体で定義した群 -/
 structure Group₁ (α : Type*) where
   mul : α → α → α
   one : α
@@ -12,6 +13,7 @@ structure Group₁ (α : Type*) where
   one_mul : ∀ x : α, mul one x = x
   mul_left_inv : ∀ x : α, mul (inv x) x = one
 
+/-- 群の圏？ -/
 structure Group₁Cat where
   α : Type*
   str : Group₁ α
@@ -40,11 +42,11 @@ example : (f.trans g : α → γ) = g ∘ f :=
 
 end
 
-example (α : Type*) : Equiv.Perm α = (α ≃ α) :=
+example (α : Type*) : (Equiv.Perm α) = (α ≃ α) :=
   rfl
 
-def permGroup {α : Type*} : Group₁ (Equiv.Perm α)
-    where
+/-- 自己同型の全体 `Equiv.Perm α` に群構造を入れたもの -/
+def permGroup {α : Type*} : Group₁ (Equiv.Perm α) where
   mul f g := Equiv.trans g f
   one := Equiv.refl α
   inv := Equiv.symm
@@ -53,9 +55,18 @@ def permGroup {α : Type*} : Group₁ (Equiv.Perm α)
   mul_one := Equiv.refl_trans
   mul_left_inv := Equiv.self_trans_symm
 
+/-- 加法的な表記を使った群（構造体バージョン）-/
 structure AddGroup₁ (α : Type*) where
   (add : α → α → α)
   -- fill in the rest
+  zero : α
+  neg : α → α
+  add_assoc : ∀ x y z : α, add (add x y) z = add x (add y z)
+  add_zero : ∀ x : α, add x zero = x
+  zero_add : ∀ x : α, add zero x = x
+  add_left_neg : ∀ x : α, add (neg x) x = zero
+
+/-- 実3次元空間 -/
 @[ext]
 structure Point where
   x : ℝ
@@ -64,14 +75,30 @@ structure Point where
 
 namespace Point
 
+#help attribute simps
+
+@[simps]
 def add (a b : Point) : Point :=
   ⟨a.x + b.x, a.y + b.y, a.z + b.z⟩
 
-def neg (a : Point) : Point := sorry
+@[simps]
+def neg (a : Point) : Point :=
+  ⟨-a.x, -a.y, -a.z⟩
 
-def zero : Point := sorry
+@[simps]
+def zero : Point := ⟨0, 0, 0⟩
 
-def addGroupPoint : AddGroup₁ Point := sorry
+/-- Point に加法群の構造を入れたもの -/
+def addGroupPoint : AddGroup₁ Point where
+  add := add
+  zero := zero
+  neg := neg
+  add_assoc := by intro a b c; ext <;> simp [add_assoc]
+  zero_add := by intro a; ext <;> simp
+  add_zero := by intro a; ext <;> simp
+  add_left_neg := by
+    intro x
+    ext <;> simp
 
 end Point
 
@@ -94,6 +121,7 @@ example {α : Type*} (f g : Equiv.Perm α) : g.symm.trans (g.trans f) = f :=
 
 end
 
+/-- class で定義した群 -/
 class Group₂ (α : Type*) where
   mul : α → α → α
   one : α
@@ -103,6 +131,7 @@ class Group₂ (α : Type*) where
   one_mul : ∀ x : α, mul one x = x
   mul_left_inv : ∀ x : α, mul (inv x) x = one
 
+/-- 自己同型群(classで定義したバージョン) -/
 instance {α : Type*} : Group₂ (Equiv.Perm α) where
   mul f g := Equiv.trans g f
   one := Equiv.refl α
@@ -149,12 +178,15 @@ example : x + y = Point.add x y :=
 
 end
 
+/-- 乗算記号を使えるようにする -/
 instance hasMulGroup₂ {α : Type*} [Group₂ α] : Mul α :=
   ⟨Group₂.mul⟩
 
+/-- 1 記号を使えるようにする -/
 instance hasOneGroup₂ {α : Type*} [Group₂ α] : One α :=
   ⟨Group₂.one⟩
 
+/-- `⁻¹` 記号を使えるようにする -/
 instance hasInvGroup₂ {α : Type*} [Group₂ α] : Inv α :=
   ⟨Group₂.inv⟩
 
@@ -171,3 +203,9 @@ end
 class AddGroup₂ (α : Type*) where
   add : α → α → α
   -- fill in the rest
+  zero : α
+  neg : α → α
+  add_assoc : ∀ x y z : α, add (add x y) z = add x (add y z)
+  add_zero : ∀ x : α, add x zero = x
+  zero_add : ∀ x : α, add zero x = x
+  add_left_neg : ∀ x : α, add (neg x) x = zero

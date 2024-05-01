@@ -3,6 +3,7 @@ import Mathlib.Algebra.EuclideanDomain.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
 import MIL.Common
 
+/-- Gauss 整数 -/
 @[ext]
 structure gaussInt where
   re : ℤ
@@ -23,6 +24,7 @@ instance : Neg gaussInt :=
   ⟨fun x ↦ ⟨-x.re, -x.im⟩⟩
 
 instance : Mul gaussInt :=
+  -- (x₀ + y₀i) * (x₁ + y₁i) = (x₀x₁ - y₀y₁) + (x₀y₁ + x₁y₀)i
   ⟨fun x y ↦ ⟨x.re * y.re - x.im * y.im, x.re * y.im + x.im * y.re⟩⟩
 
 theorem zero_def : (0 : gaussInt) = ⟨0, 0⟩ :=
@@ -120,8 +122,12 @@ instance instCommRing : CommRing gaussInt where
   mul_comm := by
     intros
     ext <;> simp <;> ring
-  zero_mul := sorry
-  mul_zero := sorry
+  zero_mul := by
+    intro a
+    ext <;> simp
+  mul_zero := by
+    intro a
+    ext <;> simp
 
 @[simp]
 theorem sub_re (x y : gaussInt) : (x - y).re = x.re - y.re :=
@@ -131,6 +137,7 @@ theorem sub_re (x y : gaussInt) : (x - y).re = x.re - y.re :=
 theorem sub_im (x y : gaussInt) : (x - y).im = x.im - y.im :=
   rfl
 
+/-- Gauss 整数はゼロ環ではない -/
 instance : Nontrivial gaussInt := by
   use 0, 1
   rw [Ne, gaussInt.ext_iff]
@@ -149,11 +156,17 @@ example (a b : ℤ) : b ≠ 0 → a % b < |b| :=
 
 namespace Int
 
+/-- 余りの絶対値が `b/2` 未満になるように定義した割り算の商 -/
 def div' (a b : ℤ) :=
   (a + b / 2) / b
 
+#guard div' 8 3 = 3
+
+/-- 余りの絶対値が `b/2` 未満になるように定義した割り算のあまり -/
 def mod' (a b : ℤ) :=
   (a + b / 2) % b - b / 2
+
+#guard mod' 8 3 = -1
 
 theorem div'_add_mod' (a b : ℤ) : b * div' a b + mod' a b = a := by
   rw [div', mod']
