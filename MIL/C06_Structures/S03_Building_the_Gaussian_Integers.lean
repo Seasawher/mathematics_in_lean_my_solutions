@@ -3,6 +3,7 @@ import Mathlib.Algebra.EuclideanDomain.Basic
 import Mathlib.RingTheory.PrincipalIdealDomain
 import MIL.Common
 
+/-- Gauss 整数 -/
 @[ext]
 structure gaussInt where
   re : ℤ
@@ -23,6 +24,7 @@ instance : Neg gaussInt :=
   ⟨fun x ↦ ⟨-x.re, -x.im⟩⟩
 
 instance : Mul gaussInt :=
+  -- (x₀ + y₀i) * (x₁ + y₁i) = (x₀x₁ - y₀y₁) + (x₀y₁ + x₁y₀)i
   ⟨fun x y ↦ ⟨x.re * y.re - x.im * y.im, x.re * y.im + x.im * y.re⟩⟩
 
 theorem zero_def : (0 : gaussInt) = ⟨0, 0⟩ :=
@@ -120,8 +122,12 @@ instance instCommRing : CommRing gaussInt where
   mul_comm := by
     intros
     ext <;> simp <;> ring
-  zero_mul := sorry
-  mul_zero := sorry
+  zero_mul := by
+    intro a
+    ext <;> simp
+  mul_zero := by
+    intro a
+    ext <;> simp
 
 @[simp]
 theorem sub_re (x y : gaussInt) : (x - y).re = x.re - y.re :=
@@ -131,6 +137,7 @@ theorem sub_re (x y : gaussInt) : (x - y).re = x.re - y.re :=
 theorem sub_im (x y : gaussInt) : (x - y).im = x.im - y.im :=
   rfl
 
+/-- Gauss 整数はゼロ環ではない -/
 instance : Nontrivial gaussInt := by
   use 0, 1
   rw [Ne, gaussInt.ext_iff]
@@ -149,11 +156,17 @@ example (a b : ℤ) : b ≠ 0 → a % b < |b| :=
 
 namespace Int
 
+/-- 余りの絶対値が `b/2` 未満になるように定義した割り算の商 -/
 def div' (a b : ℤ) :=
   (a + b / 2) / b
 
+#guard div' 8 3 = 3
+
+/-- 余りの絶対値が `b/2` 未満になるように定義した割り算のあまり -/
 def mod' (a b : ℤ) :=
   (a + b / 2) % b - b / 2
+
+#guard mod' 8 3 = -1
 
 theorem div'_add_mod' (a b : ℤ) : b * div' a b + mod' a b = a := by
   rw [div', mod']
@@ -175,7 +188,46 @@ end Int
 
 theorem sq_add_sq_eq_zero {α : Type*} [LinearOrderedRing α] (x y : α) :
     x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 := by
-  sorry
+  constructor
+
+  case mpr =>
+    intro ⟨hx, hy⟩
+    simp [hx, hy]
+
+  have (x : α) : x^2 ≥ 0 := by exact sq_nonneg x
+  case mp =>
+    intro h
+    have x_square_pos : x ^ 2 ≥ 0 := by apply this
+    have y_square_pos : y ^ 2 ≥ 0 := by apply this
+    constructor
+    · suffices x ^ 2 = 0 from by exact pow_eq_zero this
+      generalize hw : x ^ 2 = w
+      generalize hz : y ^ 2 = z
+      rw [hw] at x_square_pos h
+      rw [hz] at y_square_pos h
+      clear this hw hz
+
+      apply le_antisymm
+      · calc
+        w = w + 0 := by exact self_eq_add_right.mpr rfl
+        _ ≤ w + z := by gcongr
+        _ = 0 := by exact h
+      · assumption
+    · suffices y ^ 2 = 0 from by exact pow_eq_zero this
+      generalize hw : x ^ 2 = w
+      generalize hz : y ^ 2 = z
+      rw [hw] at x_square_pos h
+      rw [hz] at y_square_pos h
+      clear this hw hz
+
+      apply le_antisymm
+      · calc
+        z = 0 + z := by exact self_eq_add_left.mpr rfl
+        _ ≤ w + z := by gcongr
+        _ = 0 := by exact h
+      · assumption
+  done
+
 namespace gaussInt
 
 def norm (x : gaussInt) :=
@@ -183,13 +235,45 @@ def norm (x : gaussInt) :=
 
 @[simp]
 theorem norm_nonneg (x : gaussInt) : 0 ≤ norm x := by
-  sorry
+  apply add_nonneg <;> apply sq_nonneg
+
 theorem norm_eq_zero (x : gaussInt) : norm x = 0 ↔ x = 0 := by
-  sorry
+  constructor <;> intro h
+  case mpr =>
+    simp [h, norm]
+  case mp =>
+    ext <;> simp
+    all_goals
+      dsimp [norm] at h
+      have := sq_add_sq_eq_zero x.re x.im
+      rw [this] at h
+      tauto
+  done
+
 theorem norm_pos (x : gaussInt) : 0 < norm x ↔ x ≠ 0 := by
-  sorry
+  constructor <;> intro h
+
+  case mp =>
+    intro neq
+    rw [← norm_eq_zero] at neq
+    simp_all
+
+  case mpr =>
+    have norm_nonneg := norm_nonneg x
+    suffices 0 ≠ norm x from by
+      exact Ne.lt_of_le this norm_nonneg
+    intro norm
+    symm at norm
+    rw [norm_eq_zero] at norm
+    tauto
+
+  done
+
 theorem norm_mul (x y : gaussInt) : norm (x * y) = norm x * norm y := by
-  sorry
+  simp [norm]
+  ring
+
+/-- 複素共役 -/
 def conj (x : gaussInt) : gaussInt :=
   ⟨x.re, -x.im⟩
 
@@ -203,9 +287,11 @@ theorem conj_im (x : gaussInt) : (conj x).im = -x.im :=
 
 theorem norm_conj (x : gaussInt) : norm (conj x) = norm x := by simp [norm]
 
+/-- Gauss 整数同士の整除（商） -/
 instance : Div gaussInt :=
   ⟨fun x y ↦ ⟨Int.div' (x * conj y).re (norm y), Int.div' (x * conj y).im (norm y)⟩⟩
 
+/-- Gauss 整数同士の整除（余り） -/
 instance : Mod gaussInt :=
   ⟨fun x y ↦ x - y * (x / y)⟩
 
@@ -216,6 +302,7 @@ theorem div_def (x y : gaussInt) :
 theorem mod_def (x y : gaussInt) : x % y = x - y * (x / y) :=
   rfl
 
+/-- Gauss 整数の整除で，余りの norm が割る数の norm よりも小さい -/
 theorem norm_mod_lt (x : gaussInt) {y : gaussInt} (hy : y ≠ 0) :
     (x % y).norm < y.norm := by
   have norm_y_pos : 0 < norm y := by rwa [norm_pos]
@@ -264,7 +351,9 @@ instance : EuclideanDomain gaussInt :=
       rfl
     r := (measure (Int.natAbs ∘ norm)).1
     r_wellFounded := (measure (Int.natAbs ∘ norm)).2
-    remainder_lt := natAbs_norm_mod_lt
+    remainder_lt := by
+      simp_wf
+      exact natAbs_norm_mod_lt
     mul_left_not_lt := not_norm_mul_left_lt_norm }
 
 example (x : gaussInt) : Irreducible x ↔ Prime x :=

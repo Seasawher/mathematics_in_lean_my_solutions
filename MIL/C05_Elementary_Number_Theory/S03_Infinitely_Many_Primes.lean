@@ -390,10 +390,7 @@ theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3
 
   -- `s` の元を3以外すべて掛けて3を足すと，4で割って3余る自然数が得られる
   have h₁ : ((4 * ∏ i in erase s 3, i) + 3) % 4 = 3 := by
-    suffices 3 % 4 = 3 from by
-      set k := ∏ i in erase s 3, i
-      simp [Nat.add_mod]
-    simp
+    omega
 
   -- 4で割って3余る自然数には4で割って3余る素因数が存在するので，
   -- `(4 * ∏ i in erase s 3, i) + 3` にも4で割って3余る素因数 `p` が存在する
@@ -408,7 +405,7 @@ theorem primes_mod_4_eq_3_infinite : ∀ n, ∃ p > n, Nat.Prime p ∧ p % 4 = 3
   -- また `p` は 3 ではない
   have pne3 : p ≠ 3 := by
     -- 背理法で示す
-    by_contra h
+    intro h
     rw [h] at pdvd
     norm_num at pdvd
 
