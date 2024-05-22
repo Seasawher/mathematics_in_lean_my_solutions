@@ -202,10 +202,44 @@ class Ring₃ (R : Type) extends AddGroup₃ R, Monoid₃ R, MulZeroClass R wher
   /-- Multiplication is right distributive over addition -/
   right_distrib : ∀ a b c : R, (a + b) * c = a * c + b * c
 
+#print Monoid₃.one_mul
+
+theorem add_sub_self {R : Type} [Ring₃ R] (a : R) : a + - a = 0 := by
+  simp
+
+theorem sub_add_self {R : Type} [Ring₃ R] (a : R) : - a + a = 0 := by
+  simp
+
 instance {R : Type} [Ring₃ R] : AddCommGroup₃ R :=
-{ Ring₃.toAddGroup₃ with
-  add_comm := by
-    sorry }
+  { Ring₃.toAddGroup₃ with
+    add_comm := by
+      intro a b
+
+      have left : (1 + a) * (1 + b) = 1 + a + b + a * b := calc
+        _ = (1 + a) * 1 + (1 + a) * b := by rw [Ring₃.left_distrib]
+        _ = (1 * 1 + a * 1) + (1 * b + a * b) := by rw [Ring₃.right_distrib, Ring₃.right_distrib]
+        _ = (1 + a) + (b + a * b) := by rw [Monoid₃.one_mul, Monoid₃.mul_one, Monoid₃.one_mul]
+        _ = 1 + a + b + a * b := by exact (add_assoc₃ (1 + a) b (a * b)).symm
+
+      have right : (1 + a) * (1 + b) = 1 + b + a + a * b := calc
+        _ = 1 * (1 + b) + a * (1 + b) := by rw [Ring₃.right_distrib]
+        _ = (1 * 1 + 1 * b) + (a * 1 + a * b) := by rw [Ring₃.left_distrib, Ring₃.left_distrib]
+        _ = (1 + b) + (a + a * b) := by rw [Monoid₃.one_mul, Monoid₃.mul_one, Monoid₃.one_mul]
+        _ = 1 + b + a + a * b := by exact (add_assoc₃ (1 + b) a (a * b)).symm
+
+      have : 1 + a + b + a * b = 1 + b + a + a * b := by
+        rw [← left, ← right]
+
+      replace := calc
+        a + b = 0 + a + b + 0 := by rw [add_zero, zero_add]
+        _ = (-1 + 1) + a + b + 0 := by simp
+        _ = (-1 + 1) + a + b + (a * b + - (a * b)) := by simp
+        _ = -1 + 1 + a + b + (a * b + - (a * b)) := by rfl
+        _ = -1 + (1 + a + b + a * b) + - (a * b) := by
+          simp [add_assoc₃]
+          simp [← add_assoc₃]
+      sorry
+  }
 
 instance : Ring₃ ℤ where
   add := (· + ·)
